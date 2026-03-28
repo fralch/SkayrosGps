@@ -9,7 +9,7 @@ import {
   Keyboard
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors } from '../theme/colors';
+import { useTheme, type ThemeColors } from '../theme/colors';
 
 interface PlateInputProps {
   placas: string[];
@@ -19,6 +19,8 @@ interface PlateInputProps {
 }
 
 export const PlateInput = ({ placas, selectedPlaca, onSelectPlaca, disabled }: PlateInputProps) => {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const [searchText, setSearchText] = useState(selectedPlaca || '');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
@@ -94,7 +96,7 @@ export const PlateInput = ({ placas, selectedPlaca, onSelectPlaca, disabled }: P
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     marginBottom: 24,
     zIndex: 10,

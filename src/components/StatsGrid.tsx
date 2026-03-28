@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors } from '../theme/colors';
+import { useTheme, type ThemeColors } from '../theme/colors';
 
 interface StatsGridProps {
   liveAssets: number;
@@ -9,6 +9,9 @@ interface StatsGridProps {
 }
 
 export const StatsGrid = ({ liveAssets, distanceToday }: StatsGridProps) => {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
@@ -32,7 +35,7 @@ export const StatsGrid = ({ liveAssets, distanceToday }: StatsGridProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -43,7 +46,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.card,
     borderWidth: 1,
-    borderColor: '#22344E',
+    borderColor: colors.input.border,
     borderRadius: 20,
     padding: 20,
   },

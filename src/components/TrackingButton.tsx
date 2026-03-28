@@ -6,7 +6,7 @@ import {
   StyleSheet
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors } from '../theme/colors';
+import { useTheme, type ThemeColors } from '../theme/colors';
 
 interface TrackingButtonProps {
   isTracking: boolean;
@@ -23,6 +23,8 @@ export const TrackingButton = ({
   onStart, 
   onStop 
 }: TrackingButtonProps) => {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
 
   if (isTracking) {
     return (
@@ -31,7 +33,7 @@ export const TrackingButton = ({
         onPress={onStop}
       >
         <Text style={styles.buttonText}>DETENER SEGUIMIENTO</Text>
-        <Ionicons name="stop-circle" size={20} color="#FFFFFF" style={styles.icon} />
+        <Ionicons name="stop-circle" size={20} color={colors.text.inverse} style={styles.icon} />
       </TouchableOpacity>
     );
   }
@@ -64,7 +66,7 @@ export const TrackingButton = ({
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   button: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -84,7 +86,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.status.danger,
   },
   disabledButton: {
-    backgroundColor: '#223248',
+    backgroundColor: colors.input.background,
     borderColor: colors.input.border,
     borderWidth: 1,
   },

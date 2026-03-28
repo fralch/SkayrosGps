@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme, type ThemeColors } from '../theme/colors';
 
 interface StatusHeaderProps {
   isTracking: boolean;
 }
 
 export const StatusHeader = ({ isTracking }: StatusHeaderProps) => {
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
+
   return (
     <View style={styles.container}>
       <Text style={styles.statusLabel}>
@@ -19,7 +22,7 @@ export const StatusHeader = ({ isTracking }: StatusHeaderProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     marginVertical: 24,
   },

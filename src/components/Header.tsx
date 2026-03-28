@@ -1,21 +1,44 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { colors } from '../theme/colors';
+import { useTheme, type ThemeColors } from '../theme/colors';
 
-export const Header = () => {
+interface HeaderProps {
+  isColorPickerOpen: boolean;
+  onToggleColorPicker: () => void;
+}
+
+export const Header = ({ isColorPickerOpen, onToggleColorPicker }: HeaderProps) => {
+  const { colors, mode, toggleMode } = useTheme();
+  const styles = createStyles(colors);
+
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <Ionicons name="navigate" size={24} color={colors.primary} style={styles.logoIcon} />
         <Text style={styles.title}>Skayros<Text style={styles.titleHighlight}>GPS</Text></Text>
       </View>
-      <Ionicons name="location-outline" size={24} color={colors.primary} />
+      <View style={styles.actions}>
+        <TouchableOpacity style={styles.settingsButton} onPress={toggleMode} activeOpacity={0.8}>
+          <Ionicons
+            name={mode === 'dark' ? 'moon-outline' : 'sunny-outline'}
+            size={22}
+            color={colors.text.secondary}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingsButton} onPress={onToggleColorPicker} activeOpacity={0.8}>
+          <Ionicons
+            name="color-palette-outline"
+            size={22}
+            color={isColorPickerOpen ? colors.primary : colors.text.secondary}
+          />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -37,5 +60,13 @@ const styles = StyleSheet.create({
   },
   titleHighlight: {
     fontWeight: '500',
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  settingsButton: {
+    padding: 4,
   },
 });
