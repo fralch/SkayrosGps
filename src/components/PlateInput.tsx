@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  StyleSheet, 
-  TouchableOpacity, 
-  FlatList,
-  Keyboard
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet
 } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTheme, type ThemeColors } from '../theme/colors';
 
 interface PlateInputProps {
@@ -18,32 +14,18 @@ interface PlateInputProps {
   disabled?: boolean;
 }
 
-export const PlateInput = ({ placas, selectedPlaca, onSelectPlaca, disabled }: PlateInputProps) => {
+export const PlateInput = ({ selectedPlaca, disabled }: PlateInputProps) => {
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const [searchText, setSearchText] = useState(selectedPlaca || '');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-
-  const filteredPlacas = placas.filter(p => 
-    p.toLowerCase().includes(searchText.toLowerCase())
-  );
-
-  const handleSelect = (item: string) => {
-    setSearchText(item);
-    onSelectPlaca(item);
-    setShowSuggestions(false);
-    Keyboard.dismiss();
-  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.label}>ACCESO RÁPIDO: NÚMERO DE PLACA</Text>
-      
+
       <View
         style={[
           styles.inputWrapper,
-          isFocused && !disabled && styles.inputWrapperFocused,
           disabled && styles.inputWrapperDisabled
         ]}
       >
@@ -52,45 +34,14 @@ export const PlateInput = ({ placas, selectedPlaca, onSelectPlaca, disabled }: P
           placeholder="Ingresa el ID del vehículo..."
           placeholderTextColor={colors.text.muted}
           value={searchText}
-          onChangeText={(text) => {
-            setSearchText(text);
-            setShowSuggestions(true);
-          }}
-          onFocus={() => {
-            setIsFocused(true);
-            setShowSuggestions(true);
-          }}
-          onBlur={() => setIsFocused(false)}
+          onChangeText={setSearchText}
           editable={!disabled}
+          autoCapitalize="characters"
         />
-        <TouchableOpacity style={styles.iconButton} disabled={disabled}>
-          <Ionicons name="qr-code-outline" size={20} color={colors.text.secondary} />
-        </TouchableOpacity>
       </View>
 
       {!disabled && !selectedPlaca && (
         <Text style={styles.helperText}>Selecciona una placa para habilitar el seguimiento</Text>
-      )}
-
-      {showSuggestions && !disabled && searchText.length > 0 && (
-        <View style={styles.suggestionsContainer}>
-          <FlatList
-            data={filteredPlacas}
-            keyExtractor={(item) => item}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={styles.suggestionItem}
-                onPress={() => handleSelect(item)}
-              >
-                <Text style={styles.suggestionText}>{item}</Text>
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>No se encontraron placas</Text>
-            }
-          />
-        </View>
       )}
     </View>
   );
@@ -136,44 +87,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   inputDisabled: {
     color: colors.text.secondary,
   },
-  iconButton: {
-    padding: 16,
-  },
   helperText: {
     marginTop: 10,
     color: colors.text.secondary,
     fontSize: 13,
     fontWeight: '500',
-  },
-  suggestionsContainer: {
-    position: 'absolute',
-    top: 85,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.input.background,
-    borderWidth: 1,
-    borderColor: colors.input.border,
-    borderRadius: 12,
-    maxHeight: 200,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    zIndex: 20,
-  },
-  suggestionItem: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.input.border,
-  },
-  suggestionText: {
-    fontSize: 16,
-    color: colors.text.primary,
-  },
-  emptyText: {
-    padding: 16,
-    textAlign: 'center',
-    color: colors.text.muted,
   },
 });

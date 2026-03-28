@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, SafeAreaView, TouchableWithoutFeedback, Keyboard, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, SafeAreaView, Text, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 // Hooks
@@ -42,65 +42,63 @@ const AppContent = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.container}>
+      <View style={styles.container}>
           
-          <Header
-            isColorPickerOpen={showPreferences}
-            onToggleColorPicker={() => setShowPreferences((prev) => !prev)}
-          />
+        <Header
+          isColorPickerOpen={showPreferences}
+          onToggleColorPicker={() => setShowPreferences((prev) => !prev)}
+        />
 
-          {showPreferences && (
-            <View style={styles.preferencesCard}>
-              <Text style={styles.preferencesLabel}>Color principal</Text>
-              <View style={styles.accentList}>
-                {accentOptions.map((option) => {
-                  const selected = accent === option.value;
-                  return (
-                    <TouchableOpacity
-                      key={option.value}
-                      style={[
-                        styles.accentItem,
-                        { borderColor: selected ? option.value : colors.input.border }
-                      ]}
-                      onPress={() => setAccent(option.value)}
-                      activeOpacity={0.85}
-                    >
-                      <View style={[styles.accentDot, { backgroundColor: option.value }]} />
-                      <Text style={[styles.accentLabel, selected && { color: colors.text.primary }]}>{option.label}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </View>
+        {showPreferences && (
+          <View style={styles.preferencesCard}>
+            <Text style={styles.preferencesLabel}>Color principal</Text>
+            <View style={styles.accentList}>
+              {accentOptions.map((option) => {
+                const selected = accent === option.value;
+                return (
+                  <TouchableOpacity
+                    key={option.value}
+                    style={[
+                      styles.accentItem,
+                      { borderColor: selected ? option.value : colors.input.border }
+                    ]}
+                    onPress={() => setAccent(option.value)}
+                    activeOpacity={0.85}
+                  >
+                    <View style={[styles.accentDot, { backgroundColor: option.value }]} />
+                    <Text style={[styles.accentLabel, selected && { color: colors.text.primary }]}>{option.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
-          )}
-
-          <StatusHeader isTracking={isTracking} />
-
-          <View style={styles.mainCard}>
-            <PlateInput 
-              placas={placas}
-              selectedPlaca={selectedPlaca}
-              onSelectPlaca={setSelectedPlaca}
-              disabled={isTracking}
-            />
-
-            <TrackingButton 
-              isTracking={isTracking}
-              isLoading={isLoading}
-              disabled={!selectedPlaca}
-              onStart={startTracking}
-              onStop={stopTracking}
-            />
           </View>
+        )}
 
-          <StatsGrid 
-            liveAssets={stats.liveAssets}
-            distanceToday={stats.distanceToday}
+        <StatusHeader isTracking={isTracking} />
+
+        <View style={styles.mainCard}>
+          <PlateInput 
+            placas={placas}
+            selectedPlaca={selectedPlaca}
+            onSelectPlaca={setSelectedPlaca}
+            disabled={isTracking}
           />
 
+          <TrackingButton 
+            isTracking={isTracking}
+            isLoading={isLoading}
+            disabled={!selectedPlaca}
+            onStart={startTracking}
+            onStop={stopTracking}
+          />
         </View>
-      </TouchableWithoutFeedback>
+
+        <StatsGrid 
+          liveAssets={stats.liveAssets}
+          distanceToday={stats.distanceToday}
+        />
+
+      </View>
     </SafeAreaView>
   );
 };
