@@ -60,7 +60,10 @@ const AppContent = () => {
                       styles.accentItem,
                       { borderColor: selected ? option.value : colors.input.border }
                     ]}
-                    onPress={() => setAccent(option.value)}
+                    onPress={() => {
+                      setAccent(option.value);
+                      setShowPreferences(false);
+                    }}
                     activeOpacity={0.85}
                   >
                     <View style={[styles.accentDot, { backgroundColor: option.value }]} />

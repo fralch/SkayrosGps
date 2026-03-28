@@ -16,7 +16,7 @@ export const StatusHeader = ({ isTracking }: StatusHeaderProps) => {
         ESTADO DEL SISTEMA: <Text style={styles.statusValue}>{isTracking ? 'ACTIVO' : 'ÓPTIMO'}</Text>
       </Text>
       <Text style={styles.mainTitle}>
-        {isTracking ? 'Seguimiento en curso' : 'Listo para despachar'}
+        {isTracking ? 'Seguimiento en curso' : 'Listo para Iniciar'}
       </Text>
     </View>
   );
