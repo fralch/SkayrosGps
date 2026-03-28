@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as Location from 'expo-location';
 
@@ -6,13 +6,33 @@ export const useTracking = (selectedPlaca: string | null) => {
   const [isTracking, setIsTracking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const trackingInterval = useRef<NodeJS.Timeout | null>(null);
+  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+  const isRequestingRef = useRef(false);
+
+  const stopTracking = useCallback(() => {
+    if (locationSubscription.current) {
+      locationSubscription.current.remove();
+      locationSubscription.current = null;
+    }
+    setIsTracking(false);
+  }, []);
 
   useEffect(() => {
     return () => {
       stopTracking();
     };
-  }, []);
+  }, [stopTracking]);
+
+  const logCurrentLocation = useCallback(async (location: Location.LocationObject) => {
+    const payload = {
+      placa: selectedPlaca,
+      latitud: location.coords.latitude,
+      longitud: location.coords.longitude,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log('Ubicación actual (modo prueba):', payload);
+  }, [selectedPlaca]);
 
   const startTracking = async () => {
     if (!selectedPlaca) {
@@ -20,44 +40,37 @@ export const useTracking = (selectedPlaca: string | null) => {
       return;
     }
 
+    if (isRequestingRef.current) return;
+    isRequestingRef.current = true;
+
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
+      isRequestingRef.current = false;
       Alert.alert('Permiso Denegado', 'Se requieren permisos de ubicación para esta función.');
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
-      await logCurrentLocation();
+      locationSubscription.current = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.Balanced,
+          timeInterval: 5000,
+          distanceInterval: 10,
+        },
+        (location) => {
+          logCurrentLocation(location);
+        }
+      );
+
       setIsTracking(true);
-      
-      trackingInterval.current = setInterval(async () => {
-        await logCurrentLocation();
-      }, 5000);
 
     } catch (error) {
       Alert.alert('Error', 'No se pudo iniciar el servicio de ubicación.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const logCurrentLocation = async () => {
-    try {
-      const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      
-      const payload = {
-        placa: selectedPlaca,
-        latitud: location.coords.latitude,
-        longitud: location.coords.longitude,
-        timestamp: new Date().toISOString()
-      };
-
-      console.log('Ubicación actual (modo prueba):', payload);
-
-    } catch (error) {
-      console.error('Error obteniendo ubicación:', error);
+      isRequestingRef.current = false;
     }
   };
 
@@ -67,22 +80,13 @@ export const useTracking = (selectedPlaca: string | null) => {
       '¿Está seguro que desea detener el envío de coordenadas?',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Sí, Detener', 
+        {
+          text: 'Sí, Detener',
           style: 'destructive',
-          onPress: () => stopTracking() 
+          onPress: () => stopTracking()
         }
       ]
     );
-  };
-
-  const stopTracking = () => {
-    if (trackingInterval.current) {
-      clearInterval(trackingInterval.current);
-      trackingInterval.current = null;
-    }
-    
-    setIsTracking(false);
   };
 
   return {
