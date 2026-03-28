@@ -11,7 +11,6 @@ import { Header } from './src/components/Header';
 import { StatusHeader } from './src/components/StatusHeader';
 import { PlateInput } from './src/components/PlateInput';
 import { TrackingButton } from './src/components/TrackingButton';
-import { StatsGrid } from './src/components/StatsGrid';
 
 // Theme
 import { ThemeProvider, useTheme, accentOptions, type ThemeColors } from './src/theme/colors';
@@ -35,8 +34,7 @@ const AppContent = () => {
     isTracking, 
     isLoading, 
     startTracking, 
-    stopTracking,
-    stats 
+    stopTracking
   } = useTracking(selectedPlaca);
 
   return (
@@ -92,11 +90,6 @@ const AppContent = () => {
             onStop={stopTracking}
           />
         </View>
-
-        <StatsGrid 
-          liveAssets={stats.liveAssets}
-          distanceToday={stats.distanceToday}
-        />
 
       </View>
     </SafeAreaView>
@@ -161,6 +154,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     marginTop: 12,
+    marginBottom: 24,
     zIndex: 10,
     elevation: 3,
     shadowColor: '#000',

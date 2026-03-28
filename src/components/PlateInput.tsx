@@ -10,11 +10,11 @@ import { useTheme, type ThemeColors } from '../theme/colors';
 interface PlateInputProps {
   placas: string[];
   selectedPlaca: string | null;
-  onSelectPlaca: (placa: string) => void;
+  onSelectPlaca: (placa: string | null) => void;
   disabled?: boolean;
 }
 
-export const PlateInput = ({ selectedPlaca, disabled }: PlateInputProps) => {
+export const PlateInput = ({ selectedPlaca, onSelectPlaca, disabled }: PlateInputProps) => {
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const [searchText, setSearchText] = useState(selectedPlaca || '');
@@ -34,14 +34,18 @@ export const PlateInput = ({ selectedPlaca, disabled }: PlateInputProps) => {
           placeholder="Ingresa el ID del vehículo..."
           placeholderTextColor={colors.text.muted}
           value={searchText}
-          onChangeText={setSearchText}
+          onChangeText={(text) => {
+            setSearchText(text);
+            const normalized = text.trim();
+            onSelectPlaca(normalized.length > 0 ? normalized : null);
+          }}
           editable={!disabled}
           autoCapitalize="characters"
         />
       </View>
 
       {!disabled && !selectedPlaca && (
-        <Text style={styles.helperText}>Selecciona una placa para habilitar el seguimiento</Text>
+        <Text style={styles.helperText}>Ingresa una placa para habilitar el seguimiento</Text>
       )}
     </View>
   );
