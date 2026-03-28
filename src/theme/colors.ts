@@ -1,15 +1,18 @@
 export const colors = {
-  background: '#0B1120',
-  card: '#151C2C',
-  primary: '#10B981', // green from image
+  background: '#070D1A',
+  card: '#131D31',
+  primary: '#12D18E',
+  primaryDark: '#0B8B61',
   text: {
     primary: '#FFFFFF',
-    secondary: '#8B95A5',
-    muted: '#4B5563',
+    secondary: '#AAB5C8',
+    muted: '#7D8CA3',
+    inverse: '#051018',
   },
   input: {
-    background: '#1C2536',
-    border: '#2A3441',
+    background: '#1A2840',
+    border: '#334863',
+    borderFocus: '#12D18E',
   },
   status: {
     optimal: '#10B981',

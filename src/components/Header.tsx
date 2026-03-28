@@ -28,14 +28,14 @@ const styles = StyleSheet.create({
   },
   logoIcon: {
     transform: [{ rotate: '45deg' }],
-    marginRight: 8,
+    marginRight: 10,
   },
   title: {
-    fontSize: 20,
+    fontSize: 28,
     fontWeight: 'bold',
     color: colors.primary,
   },
   titleHighlight: {
-    fontWeight: 'normal',
+    fontWeight: '500',
   },
 });

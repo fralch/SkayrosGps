@@ -3,8 +3,7 @@ import {
   TouchableOpacity, 
   Text, 
   ActivityIndicator, 
-  StyleSheet,
-  View
+  StyleSheet
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../theme/colors';
@@ -31,7 +30,7 @@ export const TrackingButton = ({
         style={[styles.button, styles.stopButton]}
         onPress={onStop}
       >
-        <Text style={styles.buttonText}>STOP TRACKING</Text>
+        <Text style={styles.buttonText}>DETENER SEGUIMIENTO</Text>
         <Ionicons name="stop-circle" size={20} color="#FFFFFF" style={styles.icon} />
       </TouchableOpacity>
     );
@@ -46,13 +45,19 @@ export const TrackingButton = ({
       ]}
       onPress={onStart}
       disabled={disabled || isLoading}
+      activeOpacity={0.85}
     >
       {isLoading ? (
-        <ActivityIndicator color="#000000" />
+        <ActivityIndicator color={colors.text.inverse} />
       ) : (
         <>
-          <Text style={[styles.buttonText, styles.startText]}>START TRACKING</Text>
-          <Ionicons name="navigate" size={20} color="#000000" style={styles.iconStart} />
+          <Text style={[styles.buttonText, disabled ? styles.disabledText : styles.startText]}>INICIAR SEGUIMIENTO</Text>
+          <Ionicons
+            name="navigate"
+            size={20}
+            color={disabled ? colors.text.secondary : colors.text.inverse}
+            style={styles.iconStart}
+          />
         </>
       )}
     </TouchableOpacity>
@@ -79,8 +84,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.status.danger,
   },
   disabledButton: {
-    backgroundColor: colors.input.border,
-    opacity: 0.7,
+    backgroundColor: '#223248',
+    borderColor: colors.input.border,
+    borderWidth: 1,
   },
   buttonText: {
     fontSize: 16,
@@ -88,7 +94,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   startText: {
-    color: '#000000', // Dark text on bright green for contrast
+    color: colors.text.inverse,
+  },
+  disabledText: {
+    color: colors.text.secondary,
   },
   icon: {
     marginLeft: 8,

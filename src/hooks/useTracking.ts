@@ -31,7 +31,7 @@ export const useTracking = (selectedPlaca: string | null) => {
 
     const hasInternet = await checkInternet();
     if (!hasInternet) {
-      Alert.alert('Sin Conexión', 'Requiere conexión a internet para iniciar el tracking.');
+      Alert.alert('Sin conexión', 'Se requiere conexión a internet para iniciar el seguimiento.');
       return;
     }
 
@@ -97,7 +97,7 @@ export const useTracking = (selectedPlaca: string | null) => {
 
   const confirmStopTracking = () => {
     Alert.alert(
-      'Detener Tracking',
+      'Detener seguimiento',
       '¿Está seguro que desea detener el envío de coordenadas?',
       [
         { text: 'Cancelar', style: 'cancel' },

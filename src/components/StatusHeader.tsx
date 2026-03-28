@@ -10,10 +10,10 @@ export const StatusHeader = ({ isTracking }: StatusHeaderProps) => {
   return (
     <View style={styles.container}>
       <Text style={styles.statusLabel}>
-        SYSTEM STATUS: <Text style={styles.statusValue}>{isTracking ? 'ACTIVE' : 'OPTIMAL'}</Text>
+        ESTADO DEL SISTEMA: <Text style={styles.statusValue}>{isTracking ? 'ACTIVO' : 'ÓPTIMO'}</Text>
       </Text>
       <Text style={styles.mainTitle}>
-        {isTracking ? 'Tracking in Progress' : 'Ready to Dispatch'}
+        {isTracking ? 'Seguimiento en curso' : 'Listo para despachar'}
       </Text>
     </View>
   );
@@ -25,13 +25,13 @@ const styles = StyleSheet.create({
   },
   statusLabel: {
     fontSize: 12,
-    color: colors.text.muted,
-    fontWeight: '600',
-    letterSpacing: 1.5,
-    marginBottom: 8,
+    color: colors.text.secondary,
+    fontWeight: '700',
+    letterSpacing: 1.4,
+    marginBottom: 10,
   },
   statusValue: {
-    color: colors.text.secondary,
+    color: colors.primary,
   },
   mainTitle: {
     fontSize: 32,

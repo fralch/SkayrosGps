@@ -77,14 +77,16 @@ const styles = StyleSheet.create({
   },
   mainCard: {
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: '#253854',
     borderRadius: 24,
     padding: 24,
-    marginTop: 10,
-    zIndex: 10, // Important for the PlateInput suggestions to overlay correctly
-    elevation: 2,
+    marginTop: 12,
+    zIndex: 10,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 14,
   },
 });

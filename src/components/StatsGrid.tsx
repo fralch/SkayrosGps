@@ -14,7 +14,7 @@ export const StatsGrid = ({ liveAssets, distanceToday }: StatsGridProps) => {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <View style={styles.dot} />
-          <Text style={styles.cardLabel}>LIVE ASSETS</Text>
+          <Text style={styles.cardLabel}>ACTIVOS EN LÍNEA</Text>
         </View>
         <Text style={styles.cardValue}>{liveAssets}</Text>
       </View>
@@ -22,7 +22,7 @@ export const StatsGrid = ({ liveAssets, distanceToday }: StatsGridProps) => {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Ionicons name="analytics" size={16} color={colors.text.secondary} />
-          <Text style={[styles.cardLabel, { marginLeft: 6 }]}>DIST. TODAY</Text>
+          <Text style={[styles.cardLabel, { marginLeft: 6 }]}>DIST. HOY</Text>
         </View>
         <Text style={styles.cardValue}>
           {distanceToday.toFixed(0)} <Text style={styles.unit}>km</Text>
@@ -42,6 +42,8 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: '#22344E',
     borderRadius: 20,
     padding: 20,
   },
@@ -65,8 +67,8 @@ const styles = StyleSheet.create({
   cardLabel: {
     color: colors.text.secondary,
     fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 1,
+    fontWeight: '700',
+    letterSpacing: 1.1,
   },
   cardValue: {
     color: colors.text.primary,

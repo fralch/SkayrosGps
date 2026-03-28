@@ -21,6 +21,7 @@ interface PlateInputProps {
 export const PlateInput = ({ placas, selectedPlaca, onSelectPlaca, disabled }: PlateInputProps) => {
   const [searchText, setSearchText] = useState(selectedPlaca || '');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const filteredPlacas = placas.filter(p => 
     p.toLowerCase().includes(searchText.toLowerCase())
@@ -35,25 +36,39 @@ export const PlateInput = ({ placas, selectedPlaca, onSelectPlaca, disabled }: P
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>QUICK ENTRY: PLATE NUMBER</Text>
+      <Text style={styles.label}>ACCESO RÁPIDO: NÚMERO DE PLACA</Text>
       
-      <View style={styles.inputWrapper}>
+      <View
+        style={[
+          styles.inputWrapper,
+          isFocused && !disabled && styles.inputWrapperFocused,
+          disabled && styles.inputWrapperDisabled
+        ]}
+      >
         <TextInput
           style={[styles.input, disabled && styles.inputDisabled]}
-          placeholder="Enter vehicle ID..."
+          placeholder="Ingresa el ID del vehículo..."
           placeholderTextColor={colors.text.muted}
           value={searchText}
           onChangeText={(text) => {
             setSearchText(text);
             setShowSuggestions(true);
           }}
-          onFocus={() => setShowSuggestions(true)}
+          onFocus={() => {
+            setIsFocused(true);
+            setShowSuggestions(true);
+          }}
+          onBlur={() => setIsFocused(false)}
           editable={!disabled}
         />
         <TouchableOpacity style={styles.iconButton} disabled={disabled}>
-          <Ionicons name="qr-code-outline" size={20} color={colors.text.muted} />
+          <Ionicons name="qr-code-outline" size={20} color={colors.text.secondary} />
         </TouchableOpacity>
       </View>
+
+      {!disabled && !selectedPlaca && (
+        <Text style={styles.helperText}>Selecciona una placa para habilitar el seguimiento</Text>
+      )}
 
       {showSuggestions && !disabled && searchText.length > 0 && (
         <View style={styles.suggestionsContainer}>
@@ -86,9 +101,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 12,
-    color: colors.text.muted,
-    fontWeight: '600',
-    letterSpacing: 1,
+    color: colors.text.secondary,
+    fontWeight: '700',
+    letterSpacing: 1.1,
     marginBottom: 12,
   },
   inputWrapper: {
@@ -99,6 +114,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.input.border,
   },
+  inputWrapperFocused: {
+    borderColor: colors.input.borderFocus,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  inputWrapperDisabled: {
+    opacity: 0.7,
+  },
   input: {
     flex: 1,
     padding: 16,
@@ -106,10 +132,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   inputDisabled: {
-    opacity: 0.5,
+    color: colors.text.secondary,
   },
   iconButton: {
     padding: 16,
+  },
+  helperText: {
+    marginTop: 10,
+    color: colors.text.secondary,
+    fontSize: 13,
+    fontWeight: '500',
   },
   suggestionsContainer: {
     position: 'absolute',
