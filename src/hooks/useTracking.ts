@@ -5,6 +5,7 @@ import * as Location from 'expo-location';
 export const useTracking = (selectedPlaca: string | null) => {
   const [isTracking, setIsTracking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isStopModalVisible, setIsStopModalVisible] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObjectCoords | null>(null);
 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
@@ -83,25 +84,26 @@ export const useTracking = (selectedPlaca: string | null) => {
   };
 
   const stopTracking = () => {
-    Alert.alert(
-      'Detener seguimiento',
-      '¿Está seguro que desea detener el envío de coordenadas?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Sí, Detener',
-          style: 'destructive',
-          onPress: () => stopTrackingService()
-        }
-      ]
-    );
+    setIsStopModalVisible(true);
+  };
+
+  const cancelStopTracking = () => {
+    setIsStopModalVisible(false);
+  };
+
+  const confirmStopTracking = () => {
+    stopTrackingService();
+    setIsStopModalVisible(false);
   };
 
   return {
     isTracking,
     isLoading,
+    isStopModalVisible,
     currentLocation,
     startTracking,
-    stopTracking
+    stopTracking,
+    cancelStopTracking,
+    confirmStopTracking
   };
 };
