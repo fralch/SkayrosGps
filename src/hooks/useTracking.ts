@@ -92,6 +92,13 @@ export const useTracking = (selectedPlaca: string | null) => {
     if (isRequestingRef.current) return;
     isRequestingRef.current = true;
 
+    const isLocationServiceEnabled = await Location.hasServicesEnabledAsync();
+    if (!isLocationServiceEnabled) {
+      isRequestingRef.current = false;
+      Alert.alert('GPS desactivado', 'Activa la geolocalización del dispositivo para iniciar.');
+      return;
+    }
+
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
       isRequestingRef.current = false;

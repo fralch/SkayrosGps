@@ -7,6 +7,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useTracking } from './src/hooks/useTracking';
 import { usePlacas } from './src/hooks/usePlacas';
 import { useNetworkStatus } from './src/hooks/useNetworkStatus';
+import { useLocationServiceStatus } from './src/hooks/useLocationServiceStatus';
 
 // Components
 import { Header } from './src/components/Header';
@@ -15,6 +16,7 @@ import { PlateInput } from './src/components/PlateInput';
 import { TrackingButton } from './src/components/TrackingButton';
 import { LiveMap } from './src/components/LiveMap';
 import { NetworkBanner } from './src/components/NetworkBanner';
+import { LocationBanner } from './src/components/LocationBanner';
 
 // Theme
 import { ThemeProvider, useTheme, accentOptions, type ThemeColors } from './src/theme/colors';
@@ -35,6 +37,11 @@ const AppContent = () => {
   
   const { placas } = usePlacas();
   const { isConnected, justReconnected, isLoading: isNetworkLoading } = useNetworkStatus();
+  const {
+    isLocationEnabled,
+    justEnabled: justLocationEnabled,
+    isLoading: isLocationLoading
+  } = useLocationServiceStatus();
   const { 
     isTracking, 
     isLoading, 
@@ -89,6 +96,11 @@ const AppContent = () => {
           justReconnected={justReconnected}
           isLoading={isNetworkLoading}
         />
+        <LocationBanner
+          isLocationEnabled={isLocationEnabled}
+          justEnabled={justLocationEnabled}
+          isLoading={isLocationLoading}
+        />
 
         <StatusHeader isTracking={isTracking} isConnected={isConnected} />
 
@@ -103,7 +115,7 @@ const AppContent = () => {
           <TrackingButton 
             isTracking={isTracking}
             isLoading={isLoading}
-            disabled={!selectedPlaca}
+            disabled={!selectedPlaca || !isLocationEnabled || isLocationLoading}
             onStart={startTracking}
             onStop={stopTracking}
           />
