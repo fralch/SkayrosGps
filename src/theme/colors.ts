@@ -3,8 +3,8 @@ import React, { createContext, useContext, useMemo, useState } from 'react';
 export type ThemeMode = 'dark' | 'light';
 
 export const accentOptions = [
+  { label: 'Azul', value: '#0066cc' },
   { label: 'Verde', value: '#12D18E' },
-  { label: 'Azul', value: '#3B82F6' },
   { label: 'Morado', value: '#8B5CF6' },
   { label: 'Naranja', value: '#F97316' },
   { label: 'Rosa', value: '#EC4899' },
