@@ -63,11 +63,15 @@ export const useTracking = (selectedPlaca: string | null) => {
     try {
       locationSubscription.current = await Location.watchPositionAsync(
         {
-          accuracy: Location.Accuracy.Balanced,
+          accuracy: Location.Accuracy.High,
           timeInterval: 5000,
           distanceInterval: 10,
         },
         (location) => {
+          // Ignorar ubicaciones con precisión muy baja para evitar saltos
+          if (location.coords.accuracy && location.coords.accuracy > 50) {
+            return;
+          }
           setCurrentLocation(location.coords);
           logCurrentLocation(location);
         }
