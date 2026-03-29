@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, SafeAreaView, Text, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, View, SafeAreaView, Text, TouchableOpacity, Modal, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -17,6 +17,7 @@ import { TrackingButton } from './src/components/TrackingButton';
 import { LiveMap } from './src/components/LiveMap';
 import { NetworkBanner } from './src/components/NetworkBanner';
 import { LocationBanner } from './src/components/LocationBanner';
+import { LocationLogsView } from './src/components/LocationLogsView';
 
 // Theme
 import { ThemeProvider, useTheme, accentOptions, type ThemeColors } from './src/theme/colors';
@@ -47,6 +48,7 @@ const AppContent = () => {
     isLoading, 
     isStopModalVisible,
     currentLocation,
+    locationLogs,
     startTracking, 
     stopTracking,
     cancelStopTracking,
@@ -56,7 +58,11 @@ const AppContent = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
-      <View style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
           
         <Header
           isColorPickerOpen={showPreferences}
@@ -122,6 +128,7 @@ const AppContent = () => {
         </View>
 
         {isTracking && <LiveMap currentLocation={currentLocation} isTracking={isTracking} />}
+        <LocationLogsView logs={locationLogs} isTracking={isTracking} />
 
         <Modal
           visible={isStopModalVisible}
@@ -148,7 +155,7 @@ const AppContent = () => {
           </View>
         </Modal>
 
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -160,8 +167,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  contentContainer: {
     paddingHorizontal: 24,
     paddingTop: 20,
+    paddingBottom: 20,
   },
   preferencesCard: {
     marginTop: 6,
