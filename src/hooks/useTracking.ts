@@ -31,12 +31,18 @@ export const useTracking = (selectedPlaca: string | null) => {
       timestamp: new Date().toISOString()
     };
 
-    console.log('Ubicación actual (modo prueba):', payload);
+    if (__DEV__) {
+      console.log('Ubicación actual (modo prueba):', payload);
+    }
   }, [selectedPlaca]);
 
   const startTracking = async () => {
     if (!selectedPlaca) {
       Alert.alert('Error', 'Debe seleccionar o ingresar una placa válida para iniciar.');
+      return;
+    }
+
+    if (isTracking || locationSubscription.current) {
       return;
     }
 
