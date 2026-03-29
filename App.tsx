@@ -11,6 +11,7 @@ import { Header } from './src/components/Header';
 import { StatusHeader } from './src/components/StatusHeader';
 import { PlateInput } from './src/components/PlateInput';
 import { TrackingButton } from './src/components/TrackingButton';
+import { LiveMap } from './src/components/LiveMap';
 
 // Theme
 import { ThemeProvider, useTheme, accentOptions, type ThemeColors } from './src/theme/colors';
@@ -33,6 +34,7 @@ const AppContent = () => {
   const { 
     isTracking, 
     isLoading, 
+    currentLocation,
     startTracking, 
     stopTracking
   } = useTracking(selectedPlaca);
@@ -93,6 +95,8 @@ const AppContent = () => {
             onStop={stopTracking}
           />
         </View>
+
+        <LiveMap currentLocation={currentLocation} isTracking={isTracking} />
 
       </View>
     </SafeAreaView>

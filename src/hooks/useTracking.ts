@@ -5,11 +5,12 @@ import * as Location from 'expo-location';
 export const useTracking = (selectedPlaca: string | null) => {
   const [isTracking, setIsTracking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<Location.LocationObjectCoords | null>(null);
 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const isRequestingRef = useRef(false);
 
-  const stopTracking = useCallback(() => {
+  const stopTrackingService = useCallback(() => {
     if (locationSubscription.current) {
       locationSubscription.current.remove();
       locationSubscription.current = null;
@@ -19,9 +20,9 @@ export const useTracking = (selectedPlaca: string | null) => {
 
   useEffect(() => {
     return () => {
-      stopTracking();
+      stopTrackingService();
     };
-  }, [stopTracking]);
+  }, [stopTrackingService]);
 
   const logCurrentLocation = useCallback(async (location: Location.LocationObject) => {
     const payload = {
@@ -66,6 +67,7 @@ export const useTracking = (selectedPlaca: string | null) => {
           distanceInterval: 10,
         },
         (location) => {
+          setCurrentLocation(location.coords);
           logCurrentLocation(location);
         }
       );
@@ -80,7 +82,7 @@ export const useTracking = (selectedPlaca: string | null) => {
     }
   };
 
-  const confirmStopTracking = () => {
+  const stopTracking = () => {
     Alert.alert(
       'Detener seguimiento',
       '¿Está seguro que desea detener el envío de coordenadas?',
@@ -89,7 +91,7 @@ export const useTracking = (selectedPlaca: string | null) => {
         {
           text: 'Sí, Detener',
           style: 'destructive',
-          onPress: () => stopTracking()
+          onPress: () => stopTrackingService()
         }
       ]
     );
@@ -98,7 +100,8 @@ export const useTracking = (selectedPlaca: string | null) => {
   return {
     isTracking,
     isLoading,
+    currentLocation,
     startTracking,
-    stopTracking: confirmStopTracking
+    stopTracking
   };
 };
