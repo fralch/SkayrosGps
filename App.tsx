@@ -6,6 +6,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 // Hooks
 import { useTracking } from './src/hooks/useTracking';
 import { usePlacas } from './src/hooks/usePlacas';
+import { useNetworkStatus } from './src/hooks/useNetworkStatus';
 
 // Components
 import { Header } from './src/components/Header';
@@ -13,6 +14,7 @@ import { StatusHeader } from './src/components/StatusHeader';
 import { PlateInput } from './src/components/PlateInput';
 import { TrackingButton } from './src/components/TrackingButton';
 import { LiveMap } from './src/components/LiveMap';
+import { NetworkBanner } from './src/components/NetworkBanner';
 
 // Theme
 import { ThemeProvider, useTheme, accentOptions, type ThemeColors } from './src/theme/colors';
@@ -32,6 +34,7 @@ const AppContent = () => {
   const [showPreferences, setShowPreferences] = useState(false);
   
   const { placas } = usePlacas();
+  const { isConnected, justReconnected, isLoading: isNetworkLoading } = useNetworkStatus();
   const { 
     isTracking, 
     isLoading, 
@@ -81,7 +84,13 @@ const AppContent = () => {
           </View>
         )}
 
-        <StatusHeader isTracking={isTracking} />
+        <NetworkBanner
+          isConnected={isConnected}
+          justReconnected={justReconnected}
+          isLoading={isNetworkLoading}
+        />
+
+        <StatusHeader isTracking={isTracking} isConnected={isConnected} />
 
         <View style={styles.mainCard}>
           <PlateInput 
