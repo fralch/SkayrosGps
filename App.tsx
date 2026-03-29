@@ -96,7 +96,7 @@ const AppContent = () => {
           />
         </View>
 
-        <LiveMap currentLocation={currentLocation} isTracking={isTracking} />
+        {isTracking && <LiveMap currentLocation={currentLocation} isTracking={isTracking} />}
 
       </View>
     </SafeAreaView>
