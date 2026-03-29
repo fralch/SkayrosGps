@@ -2,6 +2,43 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as Location from 'expo-location';
 
+const MAX_ACCEPTED_ACCURACY_METERS = 35;
+const MAX_ACCEPTED_SPEED_MPS = 60;
+
+const toRadians = (value: number) => (value * Math.PI) / 180;
+
+const isValidCoordinate = (coords: Location.LocationObjectCoords) => {
+  if (!Number.isFinite(coords.latitude) || !Number.isFinite(coords.longitude)) {
+    return false;
+  }
+  if (coords.latitude === 0 && coords.longitude === 0) {
+    return false;
+  }
+  if (Math.abs(coords.latitude) > 90 || Math.abs(coords.longitude) > 180) {
+    return false;
+  }
+  return true;
+};
+
+const getDistanceMeters = (
+  from: Location.LocationObjectCoords,
+  to: Location.LocationObjectCoords
+) => {
+  const earthRadiusMeters = 6371000;
+  const deltaLat = toRadians(to.latitude - from.latitude);
+  const deltaLng = toRadians(to.longitude - from.longitude);
+  const fromLat = toRadians(from.latitude);
+  const toLat = toRadians(to.latitude);
+
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(fromLat) * Math.cos(toLat) *
+    Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusMeters * c;
+};
+
 export const useTracking = (selectedPlaca: string | null) => {
   const [isTracking, setIsTracking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -10,12 +47,16 @@ export const useTracking = (selectedPlaca: string | null) => {
 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const isRequestingRef = useRef(false);
+  const lastAcceptedLocationRef = useRef<Location.LocationObjectCoords | null>(null);
+  const lastAcceptedTimestampRef = useRef<number | null>(null);
 
   const stopTrackingService = useCallback(() => {
     if (locationSubscription.current) {
       locationSubscription.current.remove();
       locationSubscription.current = null;
     }
+    lastAcceptedLocationRef.current = null;
+    lastAcceptedTimestampRef.current = null;
     setIsTracking(false);
   }, []);
 
@@ -68,10 +109,38 @@ export const useTracking = (selectedPlaca: string | null) => {
           distanceInterval: 10,
         },
         (location) => {
-          // Ignorar ubicaciones con precisión muy baja para evitar saltos
-          if (location.coords.accuracy && location.coords.accuracy > 50) {
+          if (!isValidCoordinate(location.coords)) {
             return;
           }
+
+          const accuracy = location.coords.accuracy ?? Number.POSITIVE_INFINITY;
+          if (accuracy > MAX_ACCEPTED_ACCURACY_METERS) {
+            return;
+          }
+
+          const timestamp = location.timestamp;
+          const lastTimestamp = lastAcceptedTimestampRef.current;
+          const lastLocation = lastAcceptedLocationRef.current;
+
+          if (lastTimestamp !== null && timestamp <= lastTimestamp) {
+            return;
+          }
+
+          if (lastLocation && lastTimestamp !== null) {
+            const elapsedSeconds = (timestamp - lastTimestamp) / 1000;
+
+            if (elapsedSeconds > 0) {
+              const movedMeters = getDistanceMeters(lastLocation, location.coords);
+              const speedMps = movedMeters / elapsedSeconds;
+
+              if (speedMps > MAX_ACCEPTED_SPEED_MPS) {
+                return;
+              }
+            }
+          }
+
+          lastAcceptedLocationRef.current = location.coords;
+          lastAcceptedTimestampRef.current = timestamp;
           setCurrentLocation(location.coords);
           logCurrentLocation(location);
         }
