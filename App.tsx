@@ -17,7 +17,6 @@ import { TrackingButton } from './src/components/TrackingButton';
 import { LiveMap } from './src/components/LiveMap';
 import { NetworkBanner } from './src/components/NetworkBanner';
 import { LocationBanner } from './src/components/LocationBanner';
-import { LocationLogsView } from './src/components/LocationLogsView';
 
 // Theme
 import { ThemeProvider, useTheme, accentOptions, type ThemeColors } from './src/theme/colors';
@@ -56,7 +55,6 @@ const AppContent = () => {
     isLoading, 
     isStopModalVisible,
     currentLocation,
-    locationLogs,
     startTracking, 
     stopTracking,
     cancelStopTracking,
@@ -143,7 +141,6 @@ const AppContent = () => {
         </View>
 
         {isTracking && <LiveMap currentLocation={currentLocation} isTracking={isTracking} />}
-        <LocationLogsView logs={locationLogs} isTracking={isTracking} />
 
         <Modal
           visible={isStopModalVisible}

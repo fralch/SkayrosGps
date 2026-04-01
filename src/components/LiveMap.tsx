@@ -31,7 +31,7 @@ export const LiveMap = ({ currentLocation, isTracking }: LiveMapProps) => {
   const mapHtml = useMemo(() => {
     const latitude = markerCoords?.latitude ?? DEFAULT_REGION.latitude;
     const longitude = markerCoords?.longitude ?? DEFAULT_REGION.longitude;
-    const zoom = markerCoords ? 16 : 13;
+    const zoom = markerCoords ? 17 : 14;
     const markerColor = colors.primary;
     const hasLocation = Boolean(markerCoords);
     const popupText = hasLocation ? 'Ubicación actual' : 'Ubicación por defecto';
@@ -80,9 +80,9 @@ export const LiveMap = ({ currentLocation, isTracking }: LiveMapProps) => {
               }
 
               if (animate) {
-                map.flyTo([lat, lng], 16, { duration: 0.8 });
+                map.flyTo([lat, lng], 17, { duration: 0.8 });
               } else {
-                map.setView([lat, lng], 16);
+                map.setView([lat, lng], 17);
               }
             };
             if (window.ReactNativeWebView) {

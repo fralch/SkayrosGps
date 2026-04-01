@@ -4,17 +4,7 @@ import * as Location from 'expo-location';
 
 const MAX_ACCEPTED_ACCURACY_METERS = 35;
 const MAX_ACCEPTED_SPEED_MPS = 60;
-const MAX_LOCATION_LOGS = 60;
 const BASE_URL = 'https://sketch3dlab.com';
-
-export interface TrackingLocationLog {
-  id: string;
-  placa: string;
-  latitude: number;
-  longitude: number;
-  accuracy: number | null;
-  timestamp: string;
-}
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
@@ -55,7 +45,6 @@ export const useTracking = (selectedPlaca: string | null) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isStopModalVisible, setIsStopModalVisible] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObjectCoords | null>(null);
-  const [locationLogs, setLocationLogs] = useState<TrackingLocationLog[]>([]);
 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const isRequestingRef = useRef(false);
@@ -99,9 +88,6 @@ export const useTracking = (selectedPlaca: string | null) => {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    if (__DEV__) {
-      console.log('Ubicación enviada:', payload);
-    }
   }, [selectedPlaca]);
 
   const startTracking = async () => {
@@ -116,7 +102,6 @@ export const useTracking = (selectedPlaca: string | null) => {
 
     if (isRequestingRef.current) return;
     isRequestingRef.current = true;
-    setLocationLogs([]);
 
     const isLocationServiceEnabled = await Location.hasServicesEnabledAsync();
     if (!isLocationServiceEnabled) {
@@ -175,22 +160,7 @@ export const useTracking = (selectedPlaca: string | null) => {
           lastAcceptedLocationRef.current = location.coords;
           lastAcceptedTimestampRef.current = timestamp;
           setCurrentLocation(location.coords);
-
-          const newLog: TrackingLocationLog = {
-            id: `${timestamp}-${location.coords.latitude}-${location.coords.longitude}`,
-            placa: selectedPlaca ?? '',
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            accuracy: location.coords.accuracy ?? null,
-            timestamp: new Date(timestamp).toISOString(),
-          };
-
-          setLocationLogs((prevLogs) => [newLog, ...prevLogs].slice(0, MAX_LOCATION_LOGS));
-          void logCurrentLocation(location).catch(() => {
-            if (__DEV__) {
-              console.log('No se pudo enviar ubicación');
-            }
-          });
+          void logCurrentLocation(location).catch(() => {});
         }
       );
 
@@ -222,7 +192,6 @@ export const useTracking = (selectedPlaca: string | null) => {
     isLoading,
     isStopModalVisible,
     currentLocation,
-    locationLogs,
     startTracking,
     stopTracking,
     cancelStopTracking,
