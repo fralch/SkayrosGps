@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 
 interface CamionPlacaItem {
   id: number;
@@ -17,6 +17,30 @@ const BASE_URL = 'https://sketch3dlab.com';
 const PER_PAGE = 10;
 const MAX_PAGES_TO_SCAN = 60;
 
+const fetchPage = async (query: string, page: number) => {
+  const url = `${BASE_URL}/api/camiones/placas/paginado?per_page=${PER_PAGE}&q=${encodeURIComponent(query)}&page=${page}`;
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const json = (await response.json()) as CamionesPlacasApiResponse;
+  return {
+    data: json.data ?? [],
+    page: json.pagination?.current_page ?? page,
+    hasMorePages: Boolean(json.pagination?.has_more_pages),
+  };
+};
+
+const filterMatches = (items: CamionPlacaItem[], query: string) => {
+  const normalizedQuery = query.trim().toUpperCase();
+  if (!normalizedQuery) {
+    return items;
+  }
+  return items.filter((item) => item.placa.toUpperCase().includes(normalizedQuery));
+};
+
 export const usePlacas = () => {
   const [suggestions, setSuggestions] = useState<CamionPlacaItem[]>([]);
   const [isLoadingPlacas, setIsLoadingPlacas] = useState(false);
@@ -28,23 +52,7 @@ export const usePlacas = () => {
   const activeQueryRef = useRef('');
   const requestIdRef = useRef(0);
 
-  const fetchPage = async (query: string, page: number) => {
-    const url = `${BASE_URL}/api/camiones/placas/paginado?per_page=${PER_PAGE}&q=${encodeURIComponent(query)}&page=${page}`;
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const json = (await response.json()) as CamionesPlacasApiResponse;
-    return {
-      data: json.data ?? [],
-      page: json.pagination?.current_page ?? page,
-      hasMorePages: Boolean(json.pagination?.has_more_pages),
-    };
-  };
-
-  const searchPlacas = async (query: string) => {
+  const searchPlacas = useCallback(async (query: string) => {
     const normalizedQuery = query.trim();
     requestIdRef.current += 1;
     const requestId = requestIdRef.current;
@@ -70,7 +78,7 @@ export const usePlacas = () => {
 
       while (hasMorePages && incoming.length === 0 && scannedPages < MAX_PAGES_TO_SCAN) {
         const pageResponse = await fetchPage(normalizedQuery, targetPage);
-        incoming = pageResponse.data;
+        incoming = filterMatches(pageResponse.data, normalizedQuery);
         hasMorePages = pageResponse.hasMorePages;
         resolvedPage = pageResponse.page;
         scannedPages += 1;
@@ -98,9 +106,9 @@ export const usePlacas = () => {
         setIsLoadingPlacas(false);
       }
     }
-  };
+  }, []);
 
-  const loadMore = async () => {
+  const loadMore = useCallback(async () => {
     const normalizedQuery = activeQueryRef.current.trim();
     if (!normalizedQuery || !hasMore || isLoadingMore || isLoadingPlacas) {
       return;
@@ -112,16 +120,32 @@ export const usePlacas = () => {
     setErrorMessage(null);
 
     try {
-      const nextPage = currentPage + 1;
-      const pageResponse = await fetchPage(normalizedQuery, nextPage);
+      let targetPage = currentPage + 1;
+      let scannedPages = 0;
+      let hasMorePages: boolean = hasMore;
+      let incoming: CamionPlacaItem[] = [];
+      let resolvedPage = currentPage;
+
+      while (hasMorePages && incoming.length === 0 && scannedPages < MAX_PAGES_TO_SCAN) {
+        const pageResponse = await fetchPage(normalizedQuery, targetPage);
+        incoming = filterMatches(pageResponse.data, normalizedQuery);
+        hasMorePages = pageResponse.hasMorePages;
+        resolvedPage = pageResponse.page;
+        scannedPages += 1;
+        if (incoming.length === 0 && hasMorePages) {
+          targetPage = resolvedPage + 1;
+        }
+      }
 
       if (requestId !== requestIdRef.current) {
         return;
       }
 
-      setSuggestions((prev) => [...prev, ...pageResponse.data]);
-      setCurrentPage(pageResponse.page);
-      setHasMore(pageResponse.hasMorePages);
+      if (incoming.length > 0) {
+        setSuggestions((prev) => [...prev, ...incoming]);
+      }
+      setCurrentPage(resolvedPage);
+      setHasMore(hasMorePages);
     } catch {
       if (requestId !== requestIdRef.current) {
         return;
@@ -133,7 +157,7 @@ export const usePlacas = () => {
         setIsLoadingMore(false);
       }
     }
-  };
+  }, [currentPage, hasMore, isLoadingMore, isLoadingPlacas]);
 
   return {
     suggestions,
