@@ -36,7 +36,15 @@ const AppContent = () => {
   const [selectedPlaca, setSelectedPlaca] = useState<string | null>(null);
   const [showPreferences, setShowPreferences] = useState(false);
   
-  const { placas } = usePlacas();
+  const {
+    suggestions,
+    isLoadingPlacas,
+    isLoadingMore,
+    hasMore,
+    errorMessage,
+    searchPlacas,
+    loadMore
+  } = usePlacas();
   const { isConnected, justReconnected, isLoading: isNetworkLoading } = useNetworkStatus();
   const {
     isLocationEnabled,
@@ -112,9 +120,15 @@ const AppContent = () => {
 
         <View style={styles.mainCard}>
           <PlateInput 
-            placas={placas}
             selectedPlaca={selectedPlaca}
             onSelectPlaca={setSelectedPlaca}
+            suggestions={suggestions}
+            isLoading={isLoadingPlacas}
+            isLoadingMore={isLoadingMore}
+            hasMore={hasMore}
+            errorMessage={errorMessage}
+            onSearch={searchPlacas}
+            onLoadMore={loadMore}
             disabled={isTracking}
           />
 

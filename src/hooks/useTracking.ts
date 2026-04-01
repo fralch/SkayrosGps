@@ -5,6 +5,7 @@ import * as Location from 'expo-location';
 const MAX_ACCEPTED_ACCURACY_METERS = 35;
 const MAX_ACCEPTED_SPEED_MPS = 60;
 const MAX_LOCATION_LOGS = 60;
+const BASE_URL = 'https://sketch3dlab.com';
 
 export interface TrackingLocationLog {
   id: string;
@@ -77,16 +78,29 @@ export const useTracking = (selectedPlaca: string | null) => {
     };
   }, [stopTrackingService]);
 
-  const logCurrentLocation = useCallback((location: Location.LocationObject) => {
+  const logCurrentLocation = useCallback(async (location: Location.LocationObject) => {
     const payload = {
       placa: selectedPlaca,
       latitud: location.coords.latitude,
       longitud: location.coords.longitude,
-      timestamp: new Date().toISOString()
+      timestamp: new Date(location.timestamp).toISOString()
     };
 
+    const response = await fetch(`${BASE_URL}/api/camiones/geolocalizaciones`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
     if (__DEV__) {
-      console.log('Ubicación actual (modo prueba):', payload);
+      console.log('Ubicación enviada:', payload);
     }
   }, [selectedPlaca]);
 
@@ -172,7 +186,11 @@ export const useTracking = (selectedPlaca: string | null) => {
           };
 
           setLocationLogs((prevLogs) => [newLog, ...prevLogs].slice(0, MAX_LOCATION_LOGS));
-          logCurrentLocation(location);
+          void logCurrentLocation(location).catch(() => {
+            if (__DEV__) {
+              console.log('No se pudo enviar ubicación');
+            }
+          });
         }
       );
 
