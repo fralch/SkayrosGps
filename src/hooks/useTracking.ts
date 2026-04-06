@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as Location from 'expo-location';
+import * as TaskManager from 'expo-task-manager';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MAX_ACCEPTED_ACCURACY_METERS = 35;
 const MAX_ACCEPTED_SPEED_MPS = 60;
 const BASE_URL = 'https://sketch3dlab.com';
+const LOCATION_TASK_NAME = 'skayros-gps-background-location-task';
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 
@@ -40,6 +43,101 @@ const getDistanceMeters = (
   return earthRadiusMeters * c;
 };
 
+const isAcceptedLocation = (
+  location: Location.LocationObject,
+  previousLocation: Location.LocationObjectCoords | null,
+  previousTimestamp: number | null
+) => {
+  if (!isValidCoordinate(location.coords)) {
+    return false;
+  }
+
+  const accuracy = location.coords.accuracy ?? Number.POSITIVE_INFINITY;
+  if (accuracy > MAX_ACCEPTED_ACCURACY_METERS) {
+    return false;
+  }
+
+  if (previousTimestamp !== null && location.timestamp <= previousTimestamp) {
+    return false;
+  }
+
+  if (previousLocation && previousTimestamp !== null) {
+    const elapsedSeconds = (location.timestamp - previousTimestamp) / 1000;
+    if (elapsedSeconds > 0) {
+      const movedMeters = getDistanceMeters(previousLocation, location.coords);
+      const speedMps = movedMeters / elapsedSeconds;
+      if (speedMps > MAX_ACCEPTED_SPEED_MPS) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
+
+const sendLocationToApi = async (placa: string, location: Location.LocationObject) => {
+  const payload = {
+    placa,
+    latitud: location.coords.latitude,
+    longitud: location.coords.longitude,
+    timestamp: new Date(location.timestamp).toISOString()
+  };
+
+  const response = await fetch(`${BASE_URL}/api/camiones/geolocalizaciones`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+};
+
+let activePlaca: string | null = null;
+let lastBackgroundLocation: Location.LocationObjectCoords | null = null;
+let lastBackgroundTimestamp: number | null = null;
+
+if (!TaskManager.isTaskDefined(LOCATION_TASK_NAME)) {
+  TaskManager.defineTask(LOCATION_TASK_NAME, async ({ data, error }) => {
+    if (error || !data) {
+      return;
+    }
+
+    // Si la RAM se limpió, activePlaca será null aquí. 
+    // Lo recuperamos del almacenamiento.
+    if (!activePlaca) {
+      activePlaca = await AsyncStorage.getItem('activePlaca');
+    }
+
+    if (!activePlaca) {
+      return; // Aún nulo significa que el rastreo no está activo.
+    }
+
+    const { locations } = data as { locations?: Location.LocationObject[] };
+    if (!locations?.length) {
+      return;
+    }
+
+    for (const location of locations) {
+      if (!isAcceptedLocation(location, lastBackgroundLocation, lastBackgroundTimestamp)) {
+        continue;
+      }
+
+      lastBackgroundLocation = location.coords;
+      lastBackgroundTimestamp = location.timestamp;
+      try {
+        await sendLocationToApi(activePlaca, location);
+      } catch {
+        // Keep task alive when network fails.
+      }
+    }
+  });
+}
+
 export const useTracking = (selectedPlaca: string | null) => {
   const [isTracking, setIsTracking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -51,11 +149,22 @@ export const useTracking = (selectedPlaca: string | null) => {
   const lastAcceptedLocationRef = useRef<Location.LocationObjectCoords | null>(null);
   const lastAcceptedTimestampRef = useRef<number | null>(null);
 
-  const stopTrackingService = useCallback(() => {
+  const stopTrackingService = useCallback(async () => {
     if (locationSubscription.current) {
       locationSubscription.current.remove();
       locationSubscription.current = null;
     }
+
+    const hasStartedBackgroundTask = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+    if (hasStartedBackgroundTask) {
+      await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+    }
+
+    activePlaca = null;
+    await AsyncStorage.removeItem('activePlaca');
+    
+    lastBackgroundLocation = null;
+    lastBackgroundTimestamp = null;
     lastAcceptedLocationRef.current = null;
     lastAcceptedTimestampRef.current = null;
     setIsTracking(false);
@@ -63,36 +172,13 @@ export const useTracking = (selectedPlaca: string | null) => {
 
   useEffect(() => {
     return () => {
-      stopTrackingService();
+      void stopTrackingService();
     };
   }, [stopTrackingService]);
 
-  const logCurrentLocation = useCallback(async (location: Location.LocationObject) => {
-    const payload = {
-      placa: selectedPlaca,
-      latitud: location.coords.latitude,
-      longitud: location.coords.longitude,
-      timestamp: new Date(location.timestamp).toISOString()
-    };
-
-    const response = await fetch(`${BASE_URL}/api/camiones/geolocalizaciones`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-  }, [selectedPlaca]);
-
   const startTracking = async () => {
     if (!selectedPlaca) {
-      Alert.alert('Error', 'Debe seleccionar o ingresar una placa válida para iniciar.');
+      Alert.alert('Error', 'Debe seleccionar o ingresar una placa valida para iniciar.');
       return;
     }
 
@@ -100,26 +186,56 @@ export const useTracking = (selectedPlaca: string | null) => {
       return;
     }
 
-    if (isRequestingRef.current) return;
+    if (isRequestingRef.current) {
+      return;
+    }
     isRequestingRef.current = true;
 
     const isLocationServiceEnabled = await Location.hasServicesEnabledAsync();
     if (!isLocationServiceEnabled) {
       isRequestingRef.current = false;
-      Alert.alert('GPS desactivado', 'Activa la geolocalización del dispositivo para iniciar.');
+      Alert.alert('GPS desactivado', 'Activa la geolocalizacion del dispositivo para iniciar.');
       return;
     }
 
     const { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== 'granted') {
       isRequestingRef.current = false;
-      Alert.alert('Permiso Denegado', 'Se requieren permisos de ubicación para esta función.');
+      Alert.alert('Permiso denegado', 'Se requieren permisos de ubicacion para esta funcion.');
+      return;
+    }
+
+    const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+    if (backgroundStatus !== 'granted') {
+      isRequestingRef.current = false;
+      Alert.alert('Permiso denegado', 'Debes permitir ubicacion en segundo plano para continuar.');
       return;
     }
 
     setIsLoading(true);
 
     try {
+      activePlaca = selectedPlaca;
+      await AsyncStorage.setItem('activePlaca', selectedPlaca);
+      
+      lastBackgroundLocation = null;
+      lastBackgroundTimestamp = null;
+
+      const hasStartedBackgroundTask = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+      if (!hasStartedBackgroundTask) {
+        await Location.startLocationUpdatesAsync(LOCATION_TASK_NAME, {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 5000,
+          distanceInterval: 0,
+          pausesUpdatesAutomatically: false,
+          showsBackgroundLocationIndicator: true,
+          foregroundService: {
+            notificationTitle: 'Seguimiento GPS activo',
+            notificationBody: 'Enviando ubicacion en segundo plano',
+          },
+        });
+      }
+
       locationSubscription.current = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
@@ -127,47 +243,20 @@ export const useTracking = (selectedPlaca: string | null) => {
           distanceInterval: 0,
         },
         (location) => {
-          if (!isValidCoordinate(location.coords)) {
+          if (!isAcceptedLocation(location, lastAcceptedLocationRef.current, lastAcceptedTimestampRef.current)) {
             return;
-          }
-
-          const accuracy = location.coords.accuracy ?? Number.POSITIVE_INFINITY;
-          if (accuracy > MAX_ACCEPTED_ACCURACY_METERS) {
-            return;
-          }
-
-          const timestamp = location.timestamp;
-          const lastTimestamp = lastAcceptedTimestampRef.current;
-          const lastLocation = lastAcceptedLocationRef.current;
-
-          if (lastTimestamp !== null && timestamp <= lastTimestamp) {
-            return;
-          }
-
-          if (lastLocation && lastTimestamp !== null) {
-            const elapsedSeconds = (timestamp - lastTimestamp) / 1000;
-
-            if (elapsedSeconds > 0) {
-              const movedMeters = getDistanceMeters(lastLocation, location.coords);
-              const speedMps = movedMeters / elapsedSeconds;
-
-              if (speedMps > MAX_ACCEPTED_SPEED_MPS) {
-                return;
-              }
-            }
           }
 
           lastAcceptedLocationRef.current = location.coords;
-          lastAcceptedTimestampRef.current = timestamp;
+          lastAcceptedTimestampRef.current = location.timestamp;
           setCurrentLocation(location.coords);
-          void logCurrentLocation(location).catch(() => {});
         }
       );
 
       setIsTracking(true);
-
-    } catch (error) {
-      Alert.alert('Error', 'No se pudo iniciar el servicio de ubicación.');
+    } catch {
+      Alert.alert('Error', 'No se pudo iniciar el servicio de ubicacion.');
+      void stopTrackingService();
     } finally {
       setIsLoading(false);
       isRequestingRef.current = false;
@@ -183,7 +272,7 @@ export const useTracking = (selectedPlaca: string | null) => {
   };
 
   const confirmStopTracking = () => {
-    stopTrackingService();
+    void stopTrackingService();
     setIsStopModalVisible(false);
   };
 
