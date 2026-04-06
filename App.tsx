@@ -58,11 +58,21 @@ const AppContent = () => {
     isLoading, 
     isStopModalVisible,
     currentLocation,
+    debugLog,
     startTracking, 
     stopTracking,
     cancelStopTracking,
     confirmStopTracking
   } = useTracking(selectedPlaca, setSelectedPlaca);
+
+  const btnDisabled = !selectedPlaca || !isLocationEnabled || isLocationLoading;
+  const btnDisabledReason = !selectedPlaca
+    ? 'No hay placa seleccionada'
+    : !isLocationEnabled
+      ? 'GPS del dispositivo desactivado'
+      : isLocationLoading
+        ? 'Verificando estado de ubicacion...'
+        : 'Habilitado';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -137,10 +147,22 @@ const AppContent = () => {
           <TrackingButton 
             isTracking={isTracking}
             isLoading={isLoading}
-            disabled={!selectedPlaca || !isLocationEnabled || isLocationLoading}
+            disabled={btnDisabled}
             onStart={startTracking}
             onStop={stopTracking}
           />
+        </View>
+
+        {/* DEBUG PANEL – remove after fixing */}
+        <View style={styles.debugPanel}>
+          <Text style={styles.debugTitle}>🔧 DEBUG LOG</Text>
+          <Text style={styles.debugEntry}>Boton disabled: {btnDisabled ? 'SI' : 'NO'} → {btnDisabledReason}</Text>
+          <Text style={styles.debugEntry}>isTracking: {String(isTracking)} | isLoading: {String(isLoading)}</Text>
+          <Text style={styles.debugEntry}>selectedPlaca: {selectedPlaca ?? '(null)'}</Text>
+          <Text style={styles.debugEntry}>isLocationEnabled: {String(isLocationEnabled)} | isLocationLoading: {String(isLocationLoading)}</Text>
+          {debugLog.map((line, i) => (
+            <Text key={i} style={styles.debugEntry}>{line}</Text>
+          ))}
         </View>
 
         {isTracking && <LiveMap currentLocation={currentLocation} isTracking={isTracking} />}
@@ -310,5 +332,26 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     color: colors.text.inverse,
     fontSize: 14,
     fontWeight: '700',
+  },
+  debugPanel: {
+    marginTop: 12,
+    backgroundColor: '#1a1a2e',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+    padding: 12,
+  },
+  debugTitle: {
+    color: '#00ff88',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  debugEntry: {
+    color: '#cccccc',
+    fontSize: 11,
+    fontFamily: 'monospace' as any,
+    lineHeight: 16,
+    marginBottom: 2,
   },
 });

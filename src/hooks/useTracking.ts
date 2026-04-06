@@ -143,6 +143,12 @@ export const useTracking = (selectedPlaca: string | null, onRestorePlaca?: (plac
   const [isLoading, setIsLoading] = useState(false);
   const [isStopModalVisible, setIsStopModalVisible] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObjectCoords | null>(null);
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+
+  const addLog = useCallback((msg: string) => {
+    const time = new Date().toLocaleTimeString();
+    setDebugLog(prev => [...prev.slice(-19), `[${time}] ${msg}`]);
+  }, []);
 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
   const isRequestingRef = useRef(false);
@@ -213,8 +219,10 @@ export const useTracking = (selectedPlaca: string | null, onRestorePlaca?: (plac
             await AsyncStorage.removeItem('activePlaca');
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.warn('Failed to restore tracking state', error);
+        const errorMessage = error?.message || String(error);
+        Alert.alert('Error Restaurando GPS', `Detalle:\n${errorMessage}`);
       }
     };
 
@@ -230,38 +238,58 @@ export const useTracking = (selectedPlaca: string | null, onRestorePlaca?: (plac
   }, []);
 
   const startTracking = async () => {
+    addLog(`startTracking() called. placa=${selectedPlaca}, isTracking=${isTracking}, isRequesting=${isRequestingRef.current}`);
+
     if (!selectedPlaca) {
+      addLog('BLOCKED: selectedPlaca is null/empty');
       Alert.alert('Error', 'Debe seleccionar o ingresar una placa valida para iniciar.');
       return;
     }
 
     if (isTracking) {
+      addLog('BLOCKED: isTracking is already true');
       return;
     }
 
     if (isRequestingRef.current) {
+      addLog('BLOCKED: isRequestingRef is true (duplicate tap?)');
       return;
     }
     isRequestingRef.current = true;
 
-    const isLocationServiceEnabled = await Location.hasServicesEnabledAsync();
-    if (!isLocationServiceEnabled) {
-      isRequestingRef.current = false;
-      Alert.alert('GPS desactivado', 'Activa la geolocalizacion del dispositivo para iniciar.');
-      return;
-    }
+    try {
+      addLog('Checking GPS services...');
+      const isLocationServiceEnabled = await Location.hasServicesEnabledAsync();
+      if (!isLocationServiceEnabled) {
+        isRequestingRef.current = false;
+        addLog('BLOCKED: GPS services disabled');
+        Alert.alert('GPS desactivado', 'Activa la geolocalizacion del dispositivo para iniciar.');
+        return;
+      }
+      addLog('GPS services OK');
 
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      isRequestingRef.current = false;
-      Alert.alert('Permiso denegado', 'Se requieren permisos de ubicacion para esta funcion.');
-      return;
-    }
+      addLog('Requesting foreground permission...');
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      addLog(`Foreground permission: ${status}`);
+      if (status !== 'granted') {
+        isRequestingRef.current = false;
+        Alert.alert('Permiso denegado', 'Se requieren permisos de ubicacion para esta funcion.');
+        return;
+      }
 
-    const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
-    if (backgroundStatus !== 'granted') {
+      addLog('Requesting background permission...');
+      const { status: backgroundStatus } = await Location.requestBackgroundPermissionsAsync();
+      addLog(`Background permission: ${backgroundStatus}`);
+      if (backgroundStatus !== 'granted') {
+        isRequestingRef.current = false;
+        Alert.alert('Permiso denegado', 'Debes permitir ubicacion en segundo plano para continuar.');
+        return;
+      }
+    } catch (permError: any) {
       isRequestingRef.current = false;
-      Alert.alert('Permiso denegado', 'Debes permitir ubicacion en segundo plano para continuar.');
+      const msg = permError?.message || String(permError);
+      addLog(`ERROR in permissions phase: ${msg}`);
+      Alert.alert('Error de permisos', msg);
       return;
     }
 
@@ -307,8 +335,11 @@ export const useTracking = (selectedPlaca: string | null, onRestorePlaca?: (plac
       );
 
       setIsTracking(true);
-    } catch {
-      Alert.alert('Error', 'No se pudo iniciar el servicio de ubicacion.');
+      addLog('Tracking started successfully!');
+    } catch (e: any) {
+      const errorMessage = e?.message || String(e);
+      addLog(`ERROR starting tracking: ${errorMessage}`);
+      Alert.alert('Error al iniciar', `Detalle del error:\n${errorMessage}`);
       void stopTrackingService();
     } finally {
       setIsLoading(false);
@@ -334,6 +365,7 @@ export const useTracking = (selectedPlaca: string | null, onRestorePlaca?: (plac
     isLoading,
     isStopModalVisible,
     currentLocation,
+    debugLog,
     startTracking,
     stopTracking,
     cancelStopTracking,
