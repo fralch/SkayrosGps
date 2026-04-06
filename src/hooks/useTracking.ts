@@ -138,7 +138,7 @@ if (!TaskManager.isTaskDefined(LOCATION_TASK_NAME)) {
   });
 }
 
-export const useTracking = (selectedPlaca: string | null) => {
+export const useTracking = (selectedPlaca: string | null, onRestorePlaca?: (placa: string) => void) => {
   const [isTracking, setIsTracking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isStopModalVisible, setIsStopModalVisible] = useState(false);
@@ -171,10 +171,63 @@ export const useTracking = (selectedPlaca: string | null) => {
   }, []);
 
   useEffect(() => {
-    return () => {
-      void stopTrackingService();
+    let isMounted = true;
+
+    const restoreTrackingState = async () => {
+      try {
+        const savedPlaca = await AsyncStorage.getItem('activePlaca');
+        const hasStartedBackgroundTask = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK_NAME);
+
+        if (!isMounted) return;
+
+        if (savedPlaca && hasStartedBackgroundTask) {
+          activePlaca = savedPlaca;
+          if (onRestorePlaca) {
+            onRestorePlaca(savedPlaca);
+          }
+          setIsTracking(true);
+
+          if (!locationSubscription.current) {
+            locationSubscription.current = await Location.watchPositionAsync(
+              {
+                accuracy: Location.Accuracy.High,
+                timeInterval: 5000,
+                distanceInterval: 0,
+              },
+              (location) => {
+                if (!isAcceptedLocation(location, lastAcceptedLocationRef.current, lastAcceptedTimestampRef.current)) {
+                  return;
+                }
+                lastAcceptedLocationRef.current = location.coords;
+                lastAcceptedTimestampRef.current = location.timestamp;
+                setCurrentLocation(location.coords);
+              }
+            );
+          }
+        } else {
+          // If state is inconsistent, clean it up
+          if (hasStartedBackgroundTask) {
+            await Location.stopLocationUpdatesAsync(LOCATION_TASK_NAME);
+          }
+          if (savedPlaca) {
+            await AsyncStorage.removeItem('activePlaca');
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to restore tracking state', error);
+      }
     };
-  }, [stopTrackingService]);
+
+    void restoreTrackingState();
+
+    return () => {
+      isMounted = false;
+      if (locationSubscription.current) {
+        locationSubscription.current.remove();
+        locationSubscription.current = null;
+      }
+    };
+  }, []);
 
   const startTracking = async () => {
     if (!selectedPlaca) {
@@ -182,7 +235,7 @@ export const useTracking = (selectedPlaca: string | null) => {
       return;
     }
 
-    if (isTracking || locationSubscription.current) {
+    if (isTracking) {
       return;
     }
 

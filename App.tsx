@@ -62,7 +62,7 @@ const AppContent = () => {
     stopTracking,
     cancelStopTracking,
     confirmStopTracking
-  } = useTracking(selectedPlaca);
+  } = useTracking(selectedPlaca, setSelectedPlaca);
 
   return (
     <SafeAreaView style={styles.safeArea}>
