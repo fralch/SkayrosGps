@@ -20,7 +20,7 @@ import { NetworkBanner } from './src/components/NetworkBanner';
 import { LocationBanner } from './src/components/LocationBanner';
 
 // Theme
-import { ThemeProvider, useTheme, accentOptions, type ThemeColors } from './src/theme/colors';
+import { ThemeProvider, useTheme, type ThemeColors } from './src/theme/colors';
 
 export default function App() {
   return (
@@ -33,11 +33,10 @@ export default function App() {
 }
 
 const AppContent = () => {
-  const { colors, mode, accent, setAccent } = useTheme();
+  const { colors, mode } = useTheme();
   const styles = createStyles(colors);
   const [selectedPlaca, setSelectedPlaca] = useState<string | null>(null);
-  const [showPreferences, setShowPreferences] = useState(false);
-  
+
   const {
     suggestions,
     isLoadingPlacas,
@@ -58,7 +57,6 @@ const AppContent = () => {
     isLoading, 
     isStopModalVisible,
     currentLocation,
-    debugLog,
     startTracking, 
     stopTracking,
     cancelStopTracking,
@@ -66,13 +64,6 @@ const AppContent = () => {
   } = useTracking(selectedPlaca, setSelectedPlaca);
 
   const btnDisabled = !selectedPlaca || !isLocationEnabled || isLocationLoading;
-  const btnDisabledReason = !selectedPlaca
-    ? 'No hay placa seleccionada'
-    : !isLocationEnabled
-      ? 'GPS del dispositivo desactivado'
-      : isLocationLoading
-        ? 'Verificando estado de ubicacion...'
-        : 'Habilitado';
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -84,38 +75,7 @@ const AppContent = () => {
         showsVerticalScrollIndicator={false}
       >
           
-        <Header
-          isColorPickerOpen={showPreferences}
-          onToggleColorPicker={() => setShowPreferences((prev) => !prev)}
-        />
-
-        {showPreferences && (
-          <View style={styles.preferencesCard}>
-            <Text style={styles.preferencesLabel}>Color principal</Text>
-            <View style={styles.accentList}>
-              {accentOptions.map((option) => {
-                const selected = accent === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[
-                      styles.accentItem,
-                      { borderColor: selected ? option.value : colors.input.border }
-                    ]}
-                    onPress={() => {
-                      setAccent(option.value);
-                      setShowPreferences(false);
-                    }}
-                    activeOpacity={0.85}
-                  >
-                    <View style={[styles.accentDot, { backgroundColor: option.value }]} />
-                    <Text style={[styles.accentLabel, selected && { color: colors.text.primary }]}>{option.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        )}
+        <Header />
 
         <NetworkBanner
           isConnected={isConnected}
@@ -153,19 +113,11 @@ const AppContent = () => {
           />
         </View>
 
-        {/* DEBUG PANEL – remove after fixing */}
-        <View style={styles.debugPanel}>
-          <Text style={styles.debugTitle}>🔧 DEBUG LOG</Text>
-          <Text style={styles.debugEntry}>Boton disabled: {btnDisabled ? 'SI' : 'NO'} → {btnDisabledReason}</Text>
-          <Text style={styles.debugEntry}>isTracking: {String(isTracking)} | isLoading: {String(isLoading)}</Text>
-          <Text style={styles.debugEntry}>selectedPlaca: {selectedPlaca ?? '(null)'}</Text>
-          <Text style={styles.debugEntry}>isLocationEnabled: {String(isLocationEnabled)} | isLocationLoading: {String(isLocationLoading)}</Text>
-          {debugLog.map((line, i) => (
-            <Text key={i} style={styles.debugEntry}>{line}</Text>
-          ))}
-        </View>
-
         {isTracking && <LiveMap currentLocation={currentLocation} isTracking={isTracking} />}
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Copyright © {new Date().getFullYear()} Innovaiagroup</Text>
+        </View>
 
         <Modal
           visible={isStopModalVisible}
@@ -209,47 +161,6 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 20,
-  },
-  preferencesCard: {
-    marginTop: 6,
-    marginBottom: 6,
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.input.border,
-    padding: 14,
-  },
-  preferencesLabel: {
-    color: colors.text.secondary,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-    marginBottom: 10,
-  },
-  accentList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  accentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    backgroundColor: colors.input.background,
-  },
-  accentDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 7,
-  },
-  accentLabel: {
-    color: colors.text.secondary,
-    fontSize: 12,
-    fontWeight: '600',
   },
   mainCard: {
     backgroundColor: colors.card,
@@ -333,25 +244,14 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  debugPanel: {
-    marginTop: 12,
-    backgroundColor: '#1a1a2e',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#333',
-    padding: 12,
+  footer: {
+    marginTop: 20,
+    alignItems: 'center',
+    paddingVertical: 10,
   },
-  debugTitle: {
-    color: '#00ff88',
-    fontSize: 14,
-    fontWeight: '700',
-    marginBottom: 6,
-  },
-  debugEntry: {
-    color: '#cccccc',
-    fontSize: 11,
-    fontFamily: 'monospace' as any,
-    lineHeight: 16,
-    marginBottom: 2,
+  footerText: {
+    color: colors.text.secondary,
+    fontSize: 12,
+    fontWeight: '500',
   },
 });

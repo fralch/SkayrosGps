@@ -143,11 +143,9 @@ export const useTracking = (selectedPlaca: string | null, onRestorePlaca?: (plac
   const [isLoading, setIsLoading] = useState(false);
   const [isStopModalVisible, setIsStopModalVisible] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<Location.LocationObjectCoords | null>(null);
-  const [debugLog, setDebugLog] = useState<string[]>([]);
 
   const addLog = useCallback((msg: string) => {
-    const time = new Date().toLocaleTimeString();
-    setDebugLog(prev => [...prev.slice(-19), `[${time}] ${msg}`]);
+    // console.log(`[useTracking] ${msg}`);
   }, []);
 
   const locationSubscription = useRef<Location.LocationSubscription | null>(null);
@@ -365,7 +363,6 @@ export const useTracking = (selectedPlaca: string | null, onRestorePlaca?: (plac
     isLoading,
     isStopModalVisible,
     currentLocation,
-    debugLog,
     startTracking,
     stopTracking,
     cancelStopTracking,
